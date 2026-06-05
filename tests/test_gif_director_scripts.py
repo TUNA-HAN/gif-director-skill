@@ -243,9 +243,19 @@ class GifDirectorScriptTests(unittest.TestCase):
                 "planned-detail",
             )
             self.assertEqual(prompt_run.returncode, 0, prompt_run.stderr + prompt_run.stdout)
+            self.assertTrue((output_dir / "planned-detail.gif").exists())
+            self.assertTrue((output_dir / "planned-detail-sheet.png").exists())
+            self.assertTrue((output_dir / "planned-detail-plan.json").exists())
+            self.assertTrue((output_dir / "planned-detail-report.json").exists())
             planned = json.loads((output_dir / "planned-detail-report.json").read_text(encoding="utf-8"))
             self.assertEqual(planned["mode"], "marketing")
             self.assertEqual(planned["plan"]["target"], "detail-page")
+            self.assertEqual(planned["plan"]["business_intent"], "launch_offer")
+            self.assertEqual(planned["plan"]["constraints"]["no_video"], True)
+            self.assertIn("plan_path", planned)
+            self.assertIn("gif", planned)
+            self.assertIn("contact_sheet", planned)
+            self.assertIn("qa_report", planned)
             self.assertTrue(planned["validation"]["ok"])
 
 

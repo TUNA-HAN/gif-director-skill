@@ -161,15 +161,25 @@ def main() -> int:
     per_frame_ms = max(20, round(args.duration * 1000 / frame_count))
     sources = [load_image(path) for path in args.image]
     frames = []
+    caption_metrics = []
     for index in range(frame_count):
         t = index / max(1, frame_count - 1)
         frame = transform_frame(sources, args.preset, args.width, args.height, t).convert("RGBA")
         caption_start = 0.18 if args.preset != "caption-pop" else 0.35
         progress = 0 if t < caption_start else ease_out_back((t - caption_start) / max(0.01, 1 - caption_start))
-        draw_caption(frame, args.text, min(1, progress), zone=args.caption_zone)
+        caption_metrics.append(draw_caption(frame, args.text, min(1, progress), zone=args.caption_zone))
         frames.append(frame.convert("RGB"))
     report = save_gif(frames, args.output, per_frame_ms)
-    report.update({"preset": args.preset, "sources": [str(path) for path in args.image], "ok": True})
+    report.update(
+        {
+            "preset": args.preset,
+            "sources": [str(path) for path in args.image],
+            "ok": True,
+            "caption": args.text,
+            "caption_zone": args.caption_zone,
+            "caption_metrics": caption_metrics[-1] if caption_metrics else None,
+        }
+    )
     # Re-read after writing; do not trust encoder inputs.
     report.update(inspect_gif(args.output))
     if args.report:

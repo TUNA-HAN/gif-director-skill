@@ -10,6 +10,8 @@ Use this before final delivery for business-facing GIFs.
 - Verify the primary subject or offer is visible in the first frame.
 - Verify no blank frames and at least one changed transition.
 - Verify actual frame count, duration, dimensions, and file size.
+- Preserve `*-plan.json` for prompt-driven work.
+- Preserve `*-qa.json` when visual/readback QA is available.
 
 ## Business Use Targets
 
@@ -30,6 +32,7 @@ Repair one failed axis at a time:
 - Too static: switch to `pulse`, `slide`, `bounce`, or `wiggle`.
 - Too chaotic: switch to `gentle-zoom` or `caption-pop`.
 - Loop pops: make first/last frames closer or hold final frame intentionally.
+- Business intent wrong: rerun `plan_gif.py`, inspect `business_intent`, and adjust prompt routing before rendering again.
 
 ## No-Video Boundary
 

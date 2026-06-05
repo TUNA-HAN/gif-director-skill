@@ -1,6 +1,6 @@
 ---
 name: gif-director
-description: Use when creating, adapting, validating, optimizing, or style-matching animated GIFs from images, multiple images, text, Korean captions, reaction prompts, sticker packs, marketing/detail-page assets, existing GIFs, or reference GIFs; includes "움짤", "짤", "gif", "스티커", "상세페이지", and "이런 느낌" requests.
+description: Use when creating, adapting, validating, optimizing, or style-matching animated GIFs from images, multiple images, text, Korean captions, reaction prompts, sticker packs, marketing/detail-page assets, existing GIFs, or reference GIFs; includes "움짤", "짤", "gif", "스티커", "상세페이지", and "레퍼런스" requests.
 ---
 
 # GIF Director
@@ -14,13 +14,13 @@ Create polished non-video GIFs for chat, sticker packs, marketing banners, produ
 - Do not use video generation, image-to-video models, MP4, MOV, WebM, or video transcode workflows.
 - Do not upload user images to external services unless the user explicitly requests cloud/AI still-image assistance and consents to upload.
 - Do not trust intended frame data. Re-open the final GIF and report actual dimensions, frame count, duration, and file size.
-- Use ASCII console output in scripts. Korean belongs in captions, prompts, docs, and reports, not status glyphs.
+- Use ASCII console status output in scripts. Korean belongs in captions, prompts, docs, and reports, not status glyphs.
 - Preserve Korean captions with CJK-capable font fallback, wrapping, text outline, and automatic fit.
 - Prefer deterministic local rendering for business assets. Use AI sprite-sheet generation only as an optional still-image lane.
 
 ## Mode Routing
 
-For natural-language requests, run or mentally follow `scripts/plan_gif.py` first. The plan must choose mode, target, preset, caption, dimensions, quality flags, and whether reference analysis is required before rendering.
+For natural-language requests, run or mentally follow `scripts/plan_gif.py` first. The plan must choose mode, target, business intent, preset, caption, dimensions, quality flags, constraints, and whether reference analysis is required before rendering.
 
 - **quick**: one polished GIF from image(s) and text. Default for vague "움짤 만들어줘" requests.
 - **reference**: run `analyze_reference_gif.py`, then copy canvas, timing, caption zone, and motion intensity.
@@ -29,7 +29,7 @@ For natural-language requests, run or mentally follow `scripts/plan_gif.py` firs
 - **marketing**: use `gif_director.py --mode marketing --preset detail-page` for detail-page or ad insert GIFs.
 - **optimize**: use `optimize_gif.py` for web/detail-page size, frame, and encoder optimization.
 
-Read `references/motion-recipes.md` for preset selection and `references/quality-rubric.md` before final delivery.
+Read `references/marketing-intent-recipes.md` for business-facing GIFs, `references/motion-recipes.md` for preset selection, and `references/quality-rubric.md` before final delivery.
 
 ## Main Commands
 
@@ -39,17 +39,16 @@ Install local runtime dependency:
 python -m pip install -r <skill-dir>/requirements.txt
 ```
 
+Natural-language prompt, preferred for most users:
+
+```bash
+python <skill-dir>/scripts/gif_director.py --prompt "상세페이지용 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게." --image product.png --output-dir outputs --base-name detail-launch
+```
+
 One GIF from image(s):
 
 ```bash
 python <skill-dir>/scripts/gif_director.py --mode quick --image input.png --text "퇴근하고 싶다" --output-dir outputs --base-name reaction
-```
-
-Natural-language prompt planning:
-
-```bash
-python <skill-dir>/scripts/plan_gif.py --prompt "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게."
-python <skill-dir>/scripts/gif_director.py --prompt "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게." --image product.png --output-dir outputs --base-name planned-detail
 ```
 
 Marketing/detail-page GIF:
@@ -61,7 +60,7 @@ python <skill-dir>/scripts/gif_director.py --mode marketing --image product1.png
 Four reaction pack:
 
 ```bash
-python <skill-dir>/scripts/gif_director.py --mode pack --image input.png --output-dir outputs --base-name campaign
+python <skill-dir>/scripts/gif_director.py --prompt "카톡에서 쓸 리액션팩 4개 만들어줘." --image mascot.png --output-dir outputs --base-name reaction
 ```
 
 Sprite sheet or still-image character motion:
@@ -81,20 +80,31 @@ python <skill-dir>/scripts/generate_sprite_sheet_gemini.py --image portrait.png 
 Optimize an existing GIF:
 
 ```bash
-python <skill-dir>/scripts/optimize_gif.py --input outputs/detail-hero.gif --output outputs/detail-hero-small.gif --report outputs/detail-hero-small.json --max-width 720 --max-frames 14
+python <skill-dir>/scripts/gif_director.py --prompt "이 GIF 상세페이지에 넣게 용량 줄여줘." --input-gif source.gif --output-dir outputs --base-name source-small
 ```
 
 ## Required Delivery Loop
 
 1. Resolve images, text, target use, and output path. Default to `outputs/`.
-2. For vague or Korean business prompts, run `plan_gif.py` and preserve the emitted plan in the output report.
-3. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
-4. Route to quick, sprite, pack, marketing, or optimize mode from the plan.
-5. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
-6. Generate a contact sheet for anything subjective or business-facing.
-7. Validate with `validate_gif.py --json`.
-8. If validation fails, repair the smallest axis: text fit, canvas, frame count, duration, or file size.
-9. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, and any unresolved risk.
+2. Run or mentally follow `scripts/plan_gif.py`.
+3. Read `references/marketing-intent-recipes.md` when the target is business-facing.
+4. Read `references/motion-recipes.md` for preset selection.
+5. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
+6. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
+7. Generate contact sheet and QA report for subjective, prompt-driven, or business-facing work.
+8. Validate with `validate_gif.py --json` or inspect the final report's `validation`.
+9. If validation or QA fails, repair only the failed axis: text fit, canvas, frame count, duration, motion intensity, or file size.
+10. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, and any unresolved risk.
+
+## Output Contract
+
+Prompt-driven `gif_director.py` runs should preserve:
+
+- `<base>.gif`
+- `<base>-plan.json`
+- `<base>-sheet.png`
+- `<base>-qa.json`
+- `<base>-report.json`
 
 ## Presets
 
@@ -107,6 +117,7 @@ Business target presets in `gif_director.py`: `chat`, `sticker`, `detail-page`, 
 - Text readable at final display size.
 - Main subject not covered by captions.
 - First frame identifies the subject or offer.
+- Business intent matches the user's prompt.
 - Loop feels intentional.
 - No blank frames.
 - Actual saved frame count matches the intended motion class.

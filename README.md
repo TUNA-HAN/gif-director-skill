@@ -38,11 +38,13 @@ gh skill install TUNA-HAN/gif-director-skill gif-director --agent antigravity --
 - Multiple images to sequence/detail-page GIF.
 - Reference GIF analysis before style matching.
 - Marketing/detail-page GIF generation.
+- Korean/business prompt planning with structured `business_intent`, motion, caption, layout, and constraints.
 - Four-output reaction/sticker packs.
 - 4x4 sprite sheet to 16-frame GIF.
 - Deterministic still-image sprite motion.
 - Optional Gemini still-image sprite sheet generation with explicit upload consent.
 - Contact sheet generation.
+- Prompt plan and QA report artifacts.
 - Saved GIF readback validation.
 - GIF optimization with Pillow fallback and optional `gifski`/`ffmpeg` encoders.
 - No video generation and no MP4 workflow.
@@ -72,7 +74,9 @@ python skills/gif-director/scripts/gif_director.py --mode quick --image input.pn
 Natural-language prompt:
 
 ```bash
-python skills/gif-director/scripts/gif_director.py --prompt "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게." --image product.png --output-dir outputs --base-name planned-detail
+python skills/gif-director/scripts/gif_director.py --prompt "상세페이지용 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게." --image product.png --output-dir outputs --base-name detail-launch
+python skills/gif-director/scripts/gif_director.py --prompt "카톡에서 쓸 리액션팩 4개 만들어줘." --image mascot.png --output-dir outputs --base-name reaction
+python skills/gif-director/scripts/gif_director.py --prompt "이 GIF 상세페이지에 넣게 용량 줄여줘." --input-gif source.gif --output-dir outputs --base-name source-small
 ```
 
 Marketing/detail-page GIF:
@@ -97,4 +101,14 @@ Optimize:
 
 ```bash
 python skills/gif-director/scripts/optimize_gif.py --input outputs/detail-hero.gif --output outputs/detail-hero-small.gif --report outputs/detail-hero-small.json --max-width 720 --max-frames 14
+```
+
+Prompt-driven runs create these artifacts by default:
+
+```text
+<base>.gif
+<base>-plan.json
+<base>-sheet.png
+<base>-qa.json
+<base>-report.json
 ```

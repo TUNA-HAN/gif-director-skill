@@ -129,9 +129,9 @@ def draw_caption(
     text: str,
     progress: float,
     zone: str = "bottom",
-) -> None:
+) -> dict:
     if not text:
-        return
+        return {"text": "", "zone": zone, "bbox": None, "line_count": 0, "font_size": 0, "text_height": 0, "box_height": 0, "clipped": False}
     overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     width, height = image.size
@@ -140,7 +140,7 @@ def draw_caption(
     max_text_height = max(28, round(height * 0.3))
     font, lines, line_gap = fit_caption(draw, text, box_width - 18, max_text_height, max(18, width // 8))
     if not lines:
-        return
+        return {"text": text, "zone": zone, "bbox": None, "line_count": 0, "font_size": getattr(font, "size", 0), "text_height": 0, "box_height": 0, "clipped": False}
     line_sizes = [text_size(draw, line, font) for line in lines]
     text_height = sum(h for _, h in line_sizes) + line_gap * (len(lines) - 1)
     box_height = text_height + 18
@@ -171,6 +171,16 @@ def draw_caption(
         )
         cursor_y += line_height + line_gap
     image.alpha_composite(overlay)
+    return {
+        "text": text,
+        "zone": zone,
+        "bbox": [margin, y, margin + box_width, y + box_height],
+        "line_count": len(lines),
+        "font_size": getattr(font, "size", 0),
+        "text_height": text_height,
+        "box_height": box_height,
+        "clipped": text_height > max_text_height,
+    }
 
 
 def inspect_gif(path: Path) -> dict:
