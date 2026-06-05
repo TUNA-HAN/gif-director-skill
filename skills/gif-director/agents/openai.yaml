@@ -1,7 +1,7 @@
 interface:
   display_name: "GIF Director"
   short_description: "Create production-ready non-video GIFs for chat, stickers, and marketing."
-  default_prompt: "Use $gif-director to create a marketing-ready GIF from this image and caption."
+  default_prompt: "Use $gif-director to plan and create a marketing-ready GIF from this image and prompt."
 
 policy:
   allow_implicit_invocation: true

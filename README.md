@@ -69,6 +69,12 @@ Quick GIF:
 python skills/gif-director/scripts/gif_director.py --mode quick --image input.png --text "퇴근하고 싶다" --output-dir outputs --base-name reaction
 ```
 
+Natural-language prompt:
+
+```bash
+python skills/gif-director/scripts/gif_director.py --prompt "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게." --image product.png --output-dir outputs --base-name planned-detail
+```
+
 Marketing/detail-page GIF:
 
 ```bash

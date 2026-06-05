@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
 
 from gif_utils import inspect_gif, write_json
+from plan_gif import plan_prompt
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -30,8 +32,10 @@ PRESETS = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="High-level GIF Director runner with validation and repair.")
     parser.add_argument("--mode", choices=["quick", "pack", "marketing", "optimize"], default="quick")
+    parser.add_argument("--prompt", help="Natural language request. Used to infer mode, preset, caption, and target.")
     parser.add_argument("--image", type=Path, action="append", help="Input image. Repeat for multi-image GIFs.")
     parser.add_argument("--input-gif", type=Path, help="Existing GIF for optimize mode.")
+    parser.add_argument("--reference-gif", type=Path, help="Reference GIF for style planning.")
     parser.add_argument("--text", default="")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--base-name", default="gif-director")
@@ -152,6 +156,16 @@ def make_sheet(gif_path: Path, sheet_path: Path) -> None:
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    plan = plan_prompt(args.prompt, has_reference=bool(args.reference_gif)) if args.prompt else None
+    if plan:
+        args.mode = "quick" if plan["mode"] == "reference" else plan["mode"]
+        if not args.text:
+            args.text = plan.get("caption", "")
+        if args.preset == "chat":
+            args.preset = plan.get("target", "chat") if plan["mode"] == "marketing" else plan.get("preset", args.preset)
+        if plan["mode"] == "optimize":
+            args.max_width = plan.get("max_width", args.max_width)
+            args.max_frames = plan.get("max_frames", args.max_frames)
     images = args.image or []
     if args.mode != "optimize" and not images:
         raise SystemExit("--image is required unless --mode optimize")
@@ -162,7 +176,7 @@ def main() -> int:
             gif_path = args.output_dir / f"{args.base_name}-{suffix}.gif"
             report_path = args.output_dir / f"{args.base_name}-{suffix}.json"
             outputs.append(render_one(images, caption, gif_path, report_path, preset, args.max_bytes))
-        pack_report = {"mode": "pack", "outputs": outputs}
+        pack_report = {"mode": "pack", "plan": plan, "outputs": outputs}
         write_json(args.output_dir / f"{args.base_name}-pack.json", pack_report)
         print(f"OK wrote pack report {args.output_dir / f'{args.base_name}-pack.json'}")
         return 0
@@ -188,7 +202,7 @@ def main() -> int:
             ]
         )
         validation = validate(optimized, max_bytes=args.max_bytes)
-        report = {"mode": "optimize", "gif": str(optimized), "report": str(optimize_report), "validation": validation, "source": str(args.input_gif), "metadata": inspect_gif(optimized)}
+        report = {"mode": "optimize", "plan": plan, "gif": str(optimized), "report": str(optimize_report), "validation": validation, "source": str(args.input_gif), "metadata": inspect_gif(optimized)}
         write_json(args.output_dir / f"{args.base_name}-report.json", report)
         print(f"OK wrote optimize report {args.output_dir / f'{args.base_name}-report.json'}")
         return 0
@@ -199,7 +213,7 @@ def main() -> int:
     result = render_one(images, args.text, gif_path, report_path, selected, args.max_bytes)
     sheet_path = args.output_dir / f"{args.base_name}-sheet.png"
     make_sheet(Path(result["gif"]), sheet_path)
-    final_report = {"mode": args.mode, **result, "contact_sheet": str(sheet_path)}
+    final_report = {"mode": args.mode, "plan": plan, **result, "contact_sheet": str(sheet_path)}
     write_json(args.output_dir / f"{args.base_name}-report.json", final_report)
     print(f"OK wrote final report {args.output_dir / f'{args.base_name}-report.json'}")
     return 0

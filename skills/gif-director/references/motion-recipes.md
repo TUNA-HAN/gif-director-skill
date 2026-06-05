@@ -2,6 +2,8 @@
 
 Use this file when choosing motion for a user request.
 
+For natural-language requests, run `scripts/plan_gif.py` first or apply the same routing. Do not jump straight from a vague prompt to rendering.
+
 ## Core Presets
 
 | Preset | Use for | Avoid when |

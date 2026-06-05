@@ -20,6 +20,8 @@ Create polished non-video GIFs for chat, sticker packs, marketing banners, produ
 
 ## Mode Routing
 
+For natural-language requests, run or mentally follow `scripts/plan_gif.py` first. The plan must choose mode, target, preset, caption, dimensions, quality flags, and whether reference analysis is required before rendering.
+
 - **quick**: one polished GIF from image(s) and text. Default for vague "움짤 만들어줘" requests.
 - **reference**: run `analyze_reference_gif.py`, then copy canvas, timing, caption zone, and motion intensity.
 - **sprite**: use `render_sprite_gif.py` for 4x4 sprite sheets or deterministic still-image animation.
@@ -41,6 +43,13 @@ One GIF from image(s):
 
 ```bash
 python <skill-dir>/scripts/gif_director.py --mode quick --image input.png --text "퇴근하고 싶다" --output-dir outputs --base-name reaction
+```
+
+Natural-language prompt planning:
+
+```bash
+python <skill-dir>/scripts/plan_gif.py --prompt "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게."
+python <skill-dir>/scripts/gif_director.py --prompt "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게." --image product.png --output-dir outputs --base-name planned-detail
 ```
 
 Marketing/detail-page GIF:
@@ -78,13 +87,14 @@ python <skill-dir>/scripts/optimize_gif.py --input outputs/detail-hero.gif --out
 ## Required Delivery Loop
 
 1. Resolve images, text, target use, and output path. Default to `outputs/`.
-2. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
-3. Route to quick, sprite, pack, marketing, or optimize mode.
-4. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
-5. Generate a contact sheet for anything subjective or business-facing.
-6. Validate with `validate_gif.py --json`.
-7. If validation fails, repair the smallest axis: text fit, canvas, frame count, duration, or file size.
-8. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, and any unresolved risk.
+2. For vague or Korean business prompts, run `plan_gif.py` and preserve the emitted plan in the output report.
+3. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
+4. Route to quick, sprite, pack, marketing, or optimize mode from the plan.
+5. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
+6. Generate a contact sheet for anything subjective or business-facing.
+7. Validate with `validate_gif.py --json`.
+8. If validation fails, repair the smallest axis: text fit, canvas, frame count, duration, or file size.
+9. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, and any unresolved risk.
 
 ## Presets
 

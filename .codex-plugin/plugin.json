@@ -29,7 +29,7 @@
     ],
     "websiteURL": "https://github.com/TUNA-HAN/gif-director-skill",
     "defaultPrompt": [
-      "Use $gif-director to make a marketing GIF from this image.",
+      "Use $gif-director to plan and make a marketing GIF from this image.",
       "Use $gif-director to match this reference GIF style.",
       "Use $gif-director to make a Korean sticker pack."
     ],

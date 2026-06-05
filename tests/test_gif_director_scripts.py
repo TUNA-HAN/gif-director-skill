@@ -231,6 +231,23 @@ class GifDirectorScriptTests(unittest.TestCase):
             self.assertTrue(details["validation"]["ok"])
             self.assertLessEqual(details["validation"]["width"], 420)
 
+            prompt_run = self.run_script(
+                SCRIPTS / "gif_director.py",
+                "--prompt",
+                "상세페이지 중간에 넣을 런칭 특가 GIF. 고급스럽고 너무 정신없지 않게.",
+                "--image",
+                source,
+                "--output-dir",
+                output_dir,
+                "--base-name",
+                "planned-detail",
+            )
+            self.assertEqual(prompt_run.returncode, 0, prompt_run.stderr + prompt_run.stdout)
+            planned = json.loads((output_dir / "planned-detail-report.json").read_text(encoding="utf-8"))
+            self.assertEqual(planned["mode"], "marketing")
+            self.assertEqual(planned["plan"]["target"], "detail-page")
+            self.assertTrue(planned["validation"]["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
