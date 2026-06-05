@@ -258,6 +258,65 @@ class GifDirectorScriptTests(unittest.TestCase):
             self.assertIn("qa_report", planned)
             self.assertTrue(planned["validation"]["ok"])
 
+    def test_photoreal_prompt_requires_upload_consent_and_preserves_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "source.ppm"
+            output_dir = tmp_path / "outputs"
+            write_ppm(source)
+
+            result = self.run_script(
+                SCRIPTS / "gif_director.py",
+                "--prompt",
+                "이 사진을 아빠가 딸에게 뽀뽀를 하려는데 딸이 싫어하는 영상으로 만들어줘.",
+                "--image",
+                source,
+                "--output-dir",
+                output_dir,
+                "--base-name",
+                "family-reject",
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--allow-upload", result.stderr + result.stdout)
+            self.assertTrue((output_dir / "family-reject-plan.json").exists())
+            self.assertFalse((output_dir / "family-reject.gif").exists())
+            plan = json.loads((output_dir / "family-reject-plan.json").read_text(encoding="utf-8"))
+            self.assertEqual(plan["mode"], "photoreal")
+            self.assertEqual(plan["visual_strategy"], "photoreal_still_edit_keyframes")
+            self.assertIn("duplicate_subjects", plan["constraints"]["must_not"])
+
+    def test_openai_photoreal_keyframe_script_refuses_upload_without_consent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "source.ppm"
+            plan_path = tmp_path / "plan.json"
+            output_dir = tmp_path / "outputs"
+            write_ppm(source)
+            plan_path.write_text(
+                json.dumps(
+                    {
+                        "mode": "photoreal",
+                        "visual_strategy": "photoreal_still_edit_keyframes",
+                        "keyframes": [{"index": 1, "prompt": "photoreal test frame"}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = self.run_script(
+                SCRIPTS / "generate_photoreal_keyframes_openai.py",
+                "--image",
+                source,
+                "--plan",
+                plan_path,
+                "--output-dir",
+                output_dir,
+                "--base-name",
+                "blocked",
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Refusing external upload", result.stderr + result.stdout)
+            self.assertFalse(output_dir.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,6 +22,10 @@ def flatten_plan_value(plan: dict, key: str):
         return plan.get("motion", {}).get("frame_count", plan.get("frame_count"))
     if key == "no_video":
         return plan.get("constraints", {}).get("no_video")
+    if key == "requires_new_pose_or_expression":
+        return plan.get("action_feasibility", {}).get("requires_new_pose_or_expression")
+    if key == "requires_ai_still_edit":
+        return plan.get("action_feasibility", {}).get("requires_ai_still_edit")
     return plan.get(key)
 
 
@@ -87,6 +91,21 @@ class PromptPlannerTests(unittest.TestCase):
         self.assertEqual(plan["mode"], "reference")
         self.assertEqual(plan["target"], "chat")
         self.assertTrue(plan["needs_reference_analysis"])
+
+    def test_absent_pose_rejection_prompt_routes_to_photoreal_keyframes(self) -> None:
+        plan = self.plan("이 사진을 아빠가 딸에게 뽀뽀를 하려는데 딸이 싫어하는 영상으로 만들어줘.")
+        self.assertEqual(plan["mode"], "photoreal")
+        self.assertEqual(plan["target"], "photoreal-action-gif")
+        self.assertEqual(plan["visual_strategy"], "photoreal_still_edit_keyframes")
+        self.assertEqual(plan["action_intent"], "affection_rejection")
+        self.assertTrue(flatten_plan_value(plan, "requires_new_pose_or_expression"))
+        self.assertTrue(flatten_plan_value(plan, "requires_ai_still_edit"))
+        self.assertEqual(plan["constraints"]["no_video"], True)
+        self.assertEqual(plan["constraints"]["external_upload"], "requires_explicit_allow_upload")
+        self.assertIn("duplicate_subjects", plan["constraints"]["must_not"])
+        self.assertIn("invent_new_body_pose_locally", plan["constraints"]["must_not"])
+        self.assertIn("photoreal-keyframes", plan["quality_flags"])
+        self.assertEqual(len(plan["keyframes"]), 5)
 
 
 if __name__ == "__main__":

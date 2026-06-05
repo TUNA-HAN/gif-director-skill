@@ -59,6 +59,41 @@ MARKETING_HINTS = [
     "시연",
 ]
 
+PHOTOREAL_ACTION_HINTS = [
+    "영상으로",
+    "진짜처럼",
+    "실제처럼",
+    "자연스럽게",
+    "표정",
+    "포즈",
+    "몸을",
+    "고개",
+    "얼굴",
+]
+
+NEW_POSE_ACTION_HINTS = [
+    "하려는데",
+    "하려고",
+    "싫어하는",
+    "싫어함",
+    "싫어",
+    "피하는",
+    "피함",
+    "밀어내는",
+    "밀어냄",
+    "도망",
+    "거부",
+    "몸을 뒤로",
+    "얼굴을 돌",
+    "고개를 돌",
+]
+
+AFFECTION_REJECTION_HINTS = {
+    "affection": ["뽀뽀", "키스", "입맞춤", "쪽"],
+    "rejection": ["싫어", "싫어하는", "피하", "밀어", "거부", "도망", "으악"],
+    "family": ["아빠", "딸", "딸에게", "딸래미", "아이", "자녀"],
+}
+
 DEFAULT_CAPTIONS = {
     "launch_offer": "런칭 특가",
     "feature_highlight": "포인트 체크",
@@ -80,3 +115,16 @@ CAPTION_ROLES = {
     "reaction_pack": "reaction",
     "unknown": "message",
 }
+
+PHOTOREAL_MUST_NOT = [
+    "duplicate_subjects",
+    "extra_child",
+    "extra_parent",
+    "clone_person",
+    "cover_original_with_clone",
+    "invent_new_body_pose_locally",
+    "cartoon_overlay_as_substitute",
+    "speech_bubble_as_substitute",
+    "pretend_video_generation",
+    "mp4_mov_webm_output",
+]

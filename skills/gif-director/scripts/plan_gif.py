@@ -6,12 +6,16 @@ import re
 import sys
 
 from planner_rules import (
+    AFFECTION_REJECTION_HINTS,
     BUSINESS_INTENTS,
     CAPTION_ROLES,
     DEFAULT_CAPTIONS,
     MARKETING_HINTS,
+    NEW_POSE_ACTION_HINTS,
     OPTIMIZE_HINTS,
     PACK_HINTS,
+    PHOTOREAL_ACTION_HINTS,
+    PHOTOREAL_MUST_NOT,
     REFERENCE_HINTS,
     SPRITE_HINTS,
     TARGET_HINTS,
@@ -58,6 +62,60 @@ def extract_caption(prompt: str, business_intent: str = "unknown") -> str:
     return DEFAULT_CAPTIONS.get(business_intent, "")
 
 
+def infer_action_intent(text: str) -> str:
+    if (
+        has_any(text, AFFECTION_REJECTION_HINTS["affection"])
+        and has_any(text, AFFECTION_REJECTION_HINTS["rejection"])
+        and has_any(text, AFFECTION_REJECTION_HINTS["family"])
+    ):
+        return "affection_rejection"
+    return "none"
+
+
+def requires_photoreal_still_edit(text: str, action_intent: str) -> bool:
+    if action_intent != "none":
+        return True
+    return has_any(text, PHOTOREAL_ACTION_HINTS) and has_any(text, NEW_POSE_ACTION_HINTS)
+
+
+def build_photoreal_keyframes(action_intent: str) -> list[dict]:
+    if action_intent == "affection_rejection":
+        return [
+            {
+                "index": 1,
+                "role": "setup",
+                "prompt": "Keep the original photo composition, same father and daughter, same background. Father is close and affectionate, daughter notices him.",
+            },
+            {
+                "index": 2,
+                "role": "approach",
+                "prompt": "Photoreal edit: father gently leans in as if about to kiss his daughter. Daughter starts turning her face away, slightly uncomfortable.",
+            },
+            {
+                "index": 3,
+                "role": "rejection_readable",
+                "prompt": "Photoreal edit: daughter clearly rejects the kiss by turning her face away and pulling her upper body back. Father remains the same person, no extra people.",
+            },
+            {
+                "index": 4,
+                "role": "comic_peak",
+                "prompt": "Photoreal edit: daughter visibly dislikes the kiss attempt with a natural resistant expression and small pushing-away gesture. Preserve realism and identities.",
+            },
+            {
+                "index": 5,
+                "role": "settle",
+                "prompt": "Photoreal edit: father pauses awkwardly, daughter still avoids the kiss. Same two people only, same street background, candid family-photo realism.",
+            },
+        ]
+    return [
+        {"index": 1, "role": "setup", "prompt": "Preserve the original photo as the first photoreal keyframe."},
+        {"index": 2, "role": "action_start", "prompt": "Photoreal edit with a small natural pose change requested by the user."},
+        {"index": 3, "role": "action_peak", "prompt": "Photoreal edit where the requested action is clearly readable without adding people."},
+        {"index": 4, "role": "reaction", "prompt": "Photoreal edit with natural expression and body language matching the requested reaction."},
+        {"index": 5, "role": "settle", "prompt": "Photoreal edit returning to a coherent candid still frame."},
+    ]
+
+
 def infer_business_intent(text: str) -> str:
     if has_any(text, ["리액션팩", "감정 스티커", "네 개", "4개"]) and has_any(text, ["카톡", "친구", "스티커", "팩"]):
         return "reaction_pack"
@@ -79,6 +137,8 @@ def infer_business_intent(text: str) -> str:
 
 
 def infer_target(text: str, mode: str, business_intent: str) -> str:
+    if mode == "photoreal":
+        return "photoreal-action-gif"
     if mode == "optimize":
         return "lightweight-web"
     if mode == "sprite":
@@ -96,7 +156,9 @@ def infer_target(text: str, mode: str, business_intent: str) -> str:
     return "chat"
 
 
-def infer_mode(text: str, has_reference: bool, business_intent: str) -> str:
+def infer_mode(text: str, has_reference: bool, business_intent: str, action_intent: str) -> str:
+    if requires_photoreal_still_edit(text, action_intent):
+        return "photoreal"
     if has_reference and has_any(text, REFERENCE_HINTS):
         return "reference"
     if has_any(text, OPTIMIZE_HINTS) and has_any(text, ["gif", "움짤", "기존", "이미 만든"]):
@@ -117,6 +179,8 @@ def infer_mode(text: str, has_reference: bool, business_intent: str) -> str:
 def infer_motion_intensity(text: str, mode: str, business_intent: str) -> str:
     if mode == "reference":
         return "reference"
+    if mode == "photoreal":
+        return "photoreal-keyframe"
     if has_any(text, TONE_HINTS["subtle"]):
         return "subtle"
     if has_any(text, TONE_HINTS["energetic"]) or business_intent == "urgency":
@@ -137,6 +201,8 @@ def layout_for(target: str) -> tuple[int, int]:
 
 
 def preset_for(mode: str, target: str, intensity: str, business_intent: str) -> str:
+    if mode == "photoreal":
+        return "photoreal-keyframes"
     if mode == "optimize":
         return "optimize"
     if mode == "sprite":
@@ -158,6 +224,8 @@ def preset_for(mode: str, target: str, intensity: str, business_intent: str) -> 
 
 def timing_for(mode: str, target: str) -> tuple[float, int, int]:
     fps = 10
+    if mode == "photoreal":
+        return 1.8, fps, 5
     if mode == "sprite":
         return 1.6, fps, 16
     if target == "detail-page":
@@ -169,6 +237,8 @@ def timing_for(mode: str, target: str) -> tuple[float, int, int]:
 
 def quality_flags_for(mode: str, target: str, intensity: str) -> list[str]:
     flags = ["readback-validation", "contact-sheet"]
+    if mode == "photoreal":
+        flags.extend(["photoreal-keyframes", "upload-consent-required", "no-duplicate-subjects", "identity-consistency", "action-readability"])
     if target in {"detail-page", "ad-banner"} or mode == "marketing":
         flags.append("business-facing")
     if target in {"chat", "sticker", "sticker-pack"}:
@@ -182,8 +252,9 @@ def quality_flags_for(mode: str, target: str, intensity: str) -> list[str]:
 
 def plan_prompt(prompt: str, has_reference: bool = False) -> dict:
     text = " ".join(prompt.lower().split())
+    action_intent = infer_action_intent(text)
     business_intent = infer_business_intent(text)
-    mode = infer_mode(text, has_reference=has_reference, business_intent=business_intent)
+    mode = infer_mode(text, has_reference=has_reference, business_intent=business_intent, action_intent=action_intent)
     if mode == "optimize":
         business_intent = "unknown"
     target = infer_target(text, mode=mode, business_intent=business_intent)
@@ -191,7 +262,7 @@ def plan_prompt(prompt: str, has_reference: bool = False) -> dict:
     preset = preset_for(mode, target, intensity, business_intent)
     duration, fps, frame_count = timing_for(mode, target)
     width, height = layout_for(target)
-    caption_text = "" if mode == "pack" else extract_caption(prompt, business_intent)
+    caption_text = "" if mode in {"pack", "photoreal"} else extract_caption(prompt, business_intent)
     caption_role = CAPTION_ROLES.get(business_intent, "message")
     caption_zone = "top" if "상단" in text else "bottom"
     count = 4 if mode == "pack" else 1
@@ -199,14 +270,20 @@ def plan_prompt(prompt: str, has_reference: bool = False) -> dict:
     max_width = 720
     max_frames = 14
     flags = quality_flags_for(mode, target, intensity)
+    keyframes = build_photoreal_keyframes(action_intent) if mode == "photoreal" else []
     rationale = []
 
     if needs_reference_analysis:
         rationale.append("reference-style request")
+    if mode == "photoreal":
+        rationale.append("requested action/expression is absent from the still image")
+        rationale.append("requires AI still-image editing before GIF encoding")
     if mode == "marketing":
         rationale.append("business-facing target")
     if business_intent != "unknown":
         rationale.append(f"business intent: {business_intent}")
+    if action_intent != "none":
+        rationale.append(f"action intent: {action_intent}")
     if intensity == "subtle":
         rationale.append("subtle/premium tone")
     if intensity == "energetic":
@@ -219,14 +296,33 @@ def plan_prompt(prompt: str, has_reference: bool = False) -> dict:
         + count_hits(text, sum(TARGET_HINTS.values(), []))
         + count_hits(text, TONE_HINTS["subtle"])
         + count_hits(text, TONE_HINTS["energetic"])
+        + count_hits(text, sum(AFFECTION_REJECTION_HINTS.values(), []))
+        + count_hits(text, NEW_POSE_ACTION_HINTS)
     )
     confidence = min(0.95, 0.55 + signal_count * 0.06 + (0.12 if mode != "quick" else 0))
 
+    constraints = {
+        "no_video": True,
+        "external_upload": "forbidden_by_default",
+        "max_width": max_width,
+        "max_frames": max_frames,
+    }
+    action_feasibility = {
+        "requires_new_pose_or_expression": mode == "photoreal",
+        "requires_ai_still_edit": mode == "photoreal",
+        "local_renderer_sufficient": mode != "photoreal",
+    }
+    if mode == "photoreal":
+        constraints["external_upload"] = "requires_explicit_allow_upload"
+        constraints["must_not"] = PHOTOREAL_MUST_NOT
+
     plan = {
-        "version": "1.1",
+        "version": "1.2",
         "mode": mode,
         "target": target,
         "business_intent": business_intent,
+        "action_intent": action_intent,
+        "visual_strategy": "photoreal_still_edit_keyframes" if mode == "photoreal" else "deterministic_local_render",
         "preset": preset,
         "caption": {
             "text": caption_text,
@@ -246,14 +342,11 @@ def plan_prompt(prompt: str, has_reference: bool = False) -> dict:
             "height": height,
             "caption_zone": caption_zone,
         },
-        "constraints": {
-            "no_video": True,
-            "external_upload": "forbidden_by_default",
-            "max_width": max_width,
-            "max_frames": max_frames,
-        },
+        "constraints": constraints,
+        "action_feasibility": action_feasibility,
         "quality_flags": flags,
         "needs_reference_analysis": needs_reference_analysis,
+        "keyframes": keyframes,
         "count": count,
         "confidence": round(confidence, 2),
         "rationale": rationale,

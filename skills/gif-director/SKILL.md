@@ -25,11 +25,12 @@ For natural-language requests, run or mentally follow `scripts/plan_gif.py` firs
 - **quick**: one polished GIF from image(s) and text. Default for vague "움짤 만들어줘" requests.
 - **reference**: run `analyze_reference_gif.py`, then copy canvas, timing, caption zone, and motion intensity.
 - **sprite**: use `render_sprite_gif.py` for 4x4 sprite sheets or deterministic still-image animation.
+- **photoreal**: use AI still-image editing keyframes when the user asks for a realistic action, expression, or pose that is not present in the source image.
 - **pack**: use `gif_director.py --mode pack` for four reaction/sticker variants.
 - **marketing**: use `gif_director.py --mode marketing --preset detail-page` for detail-page or ad insert GIFs.
 - **optimize**: use `optimize_gif.py` for web/detail-page size, frame, and encoder optimization.
 
-Read `references/marketing-intent-recipes.md` for business-facing GIFs, `references/motion-recipes.md` for preset selection, and `references/quality-rubric.md` before final delivery.
+Read `references/photoreal-action-recipes.md` for realistic action/expression edits, `references/marketing-intent-recipes.md` for business-facing GIFs, `references/motion-recipes.md` for preset selection, and `references/quality-rubric.md` before final delivery.
 
 ## Main Commands
 
@@ -63,6 +64,12 @@ Four reaction pack:
 python <skill-dir>/scripts/gif_director.py --prompt "카톡에서 쓸 리액션팩 4개 만들어줘." --image mascot.png --output-dir outputs --base-name reaction
 ```
 
+Photoreal action GIF from a still image, only after explicit upload consent:
+
+```bash
+python <skill-dir>/scripts/gif_director.py --prompt "이 사진을 아빠가 딸에게 뽀뽀를 하려는데 딸이 싫어하는 영상으로 만들어줘." --image family.png --output-dir outputs --base-name family-reject --allow-upload
+```
+
 Sprite sheet or still-image character motion:
 
 ```bash
@@ -88,13 +95,15 @@ python <skill-dir>/scripts/gif_director.py --prompt "이 GIF 상세페이지에 
 1. Resolve images, text, target use, and output path. Default to `outputs/`.
 2. Run or mentally follow `scripts/plan_gif.py`.
 3. Read `references/marketing-intent-recipes.md` when the target is business-facing.
-4. Read `references/motion-recipes.md` for preset selection.
-5. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
-6. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
-7. Generate contact sheet and QA report for subjective, prompt-driven, or business-facing work.
-8. Validate with `validate_gif.py --json` or inspect the final report's `validation`.
-9. If validation or QA fails, repair only the failed axis: text fit, canvas, frame count, duration, motion intensity, or file size.
-10. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, and any unresolved risk.
+4. Read `references/photoreal-action-recipes.md` when the prompt asks for realistic new action, pose, or expression.
+5. Read `references/motion-recipes.md` for preset selection.
+6. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
+7. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
+8. For photoreal mode, refuse generation without `--allow-upload`; do not fall back to overlays or duplicated subjects.
+9. Generate contact sheet and QA report for subjective, prompt-driven, or business-facing work.
+10. Validate with `validate_gif.py --json` or inspect the final report's `validation`.
+11. If validation or QA fails, repair only the failed axis: text fit, canvas, frame count, duration, motion intensity, file size, or failed keyframe.
+12. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, upload status, and any unresolved risk.
 
 ## Output Contract
 
@@ -105,6 +114,11 @@ Prompt-driven `gif_director.py` runs should preserve:
 - `<base>-sheet.png`
 - `<base>-qa.json`
 - `<base>-report.json`
+
+Photoreal runs should also preserve:
+
+- `<base>-frame-01.png` through generated keyframes
+- `<base>-photoreal-report.json`
 
 ## Presets
 
@@ -123,3 +137,4 @@ Business target presets in `gif_director.py`: `chat`, `sticker`, `detail-page`, 
 - Actual saved frame count matches the intended motion class.
 - File size is appropriate for the target surface.
 - No external upload occurred unless explicitly authorized.
+- For photoreal action GIFs, no duplicated people, no extra child/parent, no clone, and no cartoon/text overlay substitute.

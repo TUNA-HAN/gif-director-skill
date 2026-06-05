@@ -45,6 +45,7 @@ gh skill install TUNA-HAN/gif-director-skill gif-director --agent antigravity --
 - Optional Gemini still-image sprite sheet generation with explicit upload consent.
 - Contact sheet generation.
 - Prompt plan and QA report artifacts.
+- Photoreal still-image edit keyframes to GIF for realistic pose/expression/action changes, only after explicit upload consent.
 - Saved GIF readback validation.
 - GIF optimization with Pillow fallback and optional `gifski`/`ffmpeg` encoders.
 - No video generation and no MP4 workflow.
@@ -78,6 +79,14 @@ python skills/gif-director/scripts/gif_director.py --prompt "상세페이지용 
 python skills/gif-director/scripts/gif_director.py --prompt "카톡에서 쓸 리액션팩 4개 만들어줘." --image mascot.png --output-dir outputs --base-name reaction
 python skills/gif-director/scripts/gif_director.py --prompt "이 GIF 상세페이지에 넣게 용량 줄여줘." --input-gif source.gif --output-dir outputs --base-name source-small
 ```
+
+Photoreal action GIF, requiring external image upload consent:
+
+```bash
+python skills/gif-director/scripts/gif_director.py --prompt "이 사진을 아빠가 딸에게 뽀뽀를 하려는데 딸이 싫어하는 영상으로 만들어줘." --image family.png --output-dir outputs --base-name family-reject --allow-upload
+```
+
+Without `--allow-upload`, the skill writes the plan and refuses generation instead of faking the action with local overlays or duplicated people.
 
 Marketing/detail-page GIF:
 

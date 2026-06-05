@@ -31,7 +31,7 @@ PRESETS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="High-level GIF Director runner with validation and repair.")
-    parser.add_argument("--mode", choices=["quick", "pack", "marketing", "optimize", "sprite"], default="quick")
+    parser.add_argument("--mode", choices=["quick", "pack", "marketing", "optimize", "sprite", "photoreal"], default="quick")
     parser.add_argument("--prompt", help="Natural language request. Used to infer mode, preset, caption, and target.")
     parser.add_argument("--image", type=Path, action="append", help="Input image. Repeat for multi-image GIFs.")
     parser.add_argument("--input-gif", type=Path, help="Existing GIF for optimize mode.")
@@ -43,6 +43,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-bytes", type=int, default=8_000_000)
     parser.add_argument("--max-width", type=int, default=720)
     parser.add_argument("--max-frames", type=int, default=14)
+    parser.add_argument("--allow-upload", action="store_true", help="Allow external upload for optional AI still-image editing lanes.")
+    parser.add_argument("--image-model", default="gpt-image-1.5", help="Image editing model for photoreal keyframe generation.")
     return parser.parse_args()
 
 
@@ -208,6 +210,29 @@ def render_sprite(images: list[Path], text: str, output: Path, report: Path, pla
     return {"gif": str(output), "report": str(report), "validation": validate(output, max_bytes=max_bytes)}
 
 
+def render_photoreal(images: list[Path], plan_path: Path, output_dir: Path, base_name: str, model: str, allow_upload: bool, max_bytes: int) -> dict:
+    if not allow_upload:
+        raise SystemExit("Photoreal action GIF requires AI still-image editing and external image upload. Re-run with --allow-upload only after explicit user consent.")
+    args = [
+        str(SCRIPT_DIR / "generate_photoreal_keyframes_openai.py"),
+        "--image",
+        str(images[0]),
+        "--plan",
+        str(plan_path),
+        "--output-dir",
+        str(output_dir),
+        "--base-name",
+        base_name,
+        "--model",
+        model,
+        "--allow-upload",
+    ]
+    run_python(args)
+    gif_path = output_dir / f"{base_name}.gif"
+    report_path = output_dir / f"{base_name}-photoreal-report.json"
+    return {"gif": str(gif_path), "report": str(report_path), "validation": validate(gif_path, max_bytes=max_bytes)}
+
+
 def validate(path: Path, max_bytes: int) -> dict:
     result = subprocess.run(
         [
@@ -278,6 +303,35 @@ def main() -> int:
     images = args.image or []
     if args.mode != "optimize" and not images:
         raise SystemExit("--image is required unless --mode optimize")
+
+    if args.mode == "photoreal":
+        if not plan_path:
+            raise SystemExit("--prompt is required for photoreal mode so keyframes and constraints can be planned")
+        result = render_photoreal(images, plan_path, args.output_dir, args.base_name, args.image_model, args.allow_upload, args.max_bytes)
+        sheet_path = args.output_dir / f"{args.base_name}-sheet.png"
+        make_sheet(Path(result["gif"]), sheet_path)
+        final_report = {
+            "mode": "photoreal",
+            "plan": plan,
+            "plan_path": str(plan_path),
+            **result,
+            "contact_sheet": str(sheet_path),
+            "qa_report": None,
+            "qa": {
+                "manual_review_required": True,
+                "checklist": [
+                    "same two people only",
+                    "no duplicate subjects",
+                    "daughter rejection is readable",
+                    "same background and lighting",
+                    "no cartoon/text overlay substitute",
+                ],
+            },
+            "reference_analysis": reference_analysis,
+        }
+        write_json(args.output_dir / f"{args.base_name}-report.json", final_report)
+        print(f"OK wrote photoreal report {args.output_dir / f'{args.base_name}-report.json'}")
+        return 0
 
     if args.mode == "pack":
         outputs = []
