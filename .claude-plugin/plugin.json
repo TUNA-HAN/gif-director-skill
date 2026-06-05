@@ -1,0 +1,11 @@
+{
+  "name": "gif-director",
+  "description": "Create polished non-video GIFs from images, text, Korean captions, and reference GIFs.",
+  "version": "0.1.0",
+  "author": {
+    "name": "TUNA-HAN"
+  },
+  "homepage": "https://github.com/TUNA-HAN/gif-director-skill",
+  "repository": "https://github.com/TUNA-HAN/gif-director-skill",
+  "license": "MIT"
+}

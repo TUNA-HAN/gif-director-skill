@@ -1,0 +1,7 @@
+interface:
+  display_name: "GIF Director"
+  short_description: "Create polished non-video GIFs from images, text, and references."
+  default_prompt: "Use $gif-director to make a polished chat GIF from this image and caption."
+
+policy:
+  allow_implicit_invocation: true

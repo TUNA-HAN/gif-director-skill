@@ -1,0 +1,19 @@
+{
+  "name": "gif-director-skills",
+  "owner": {
+    "name": "TUNA-HAN"
+  },
+  "description": "Installable GIF creation skills for Claude Code.",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "name": "gif-director",
+      "source": ".",
+      "description": "Create polished non-video GIFs from images, text, Korean captions, and reference GIFs.",
+      "version": "0.1.0",
+      "author": {
+        "name": "TUNA-HAN"
+      }
+    }
+  ]
+}
