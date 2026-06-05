@@ -34,6 +34,19 @@ Read `references/photoreal-action-recipes.md` for realistic action/expression ed
 
 ## Main Commands
 
+Install or refresh this skill for Codex, Claude Code, and Antigravity from a cloned repo:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-or-update.ps1
+```
+
+Check existing GitHub CLI skill updates:
+
+```powershell
+gh skill update --dry-run gif-director
+gh skill update gif-director
+```
+
 Install local runtime dependency:
 
 ```bash

@@ -1,6 +1,6 @@
 {
   "name": "gif-director",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Create polished non-video GIFs from images, text, Korean captions, and reference GIFs.",
   "author": {
     "name": "TUNA-HAN",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "GIF Director",
     "shortDescription": "Create polished non-video GIFs from images, text, and references.",
-    "longDescription": "A portable agent skill for local image-to-GIF creation, AI still-edit photoreal keyframes with explicit upload consent, sprite GIFs, reference GIF analysis, Korean caption fitting, marketing/detail-page GIFs, sticker packs, contact sheets, optimization, and saved-file validation without video generation.",
+    "longDescription": "A portable agent skill for local image-to-GIF creation, one-command install-or-refresh UX, AI still-edit photoreal keyframes with explicit upload consent, sprite GIFs, reference GIF analysis, Korean caption fitting, marketing/detail-page GIFs, sticker packs, contact sheets, optimization, and saved-file validation without video generation.",
     "developerName": "TUNA-HAN",
     "category": "Creativity",
     "capabilities": [

@@ -17,12 +17,45 @@ Install this Agent Skill from GitHub:
 https://github.com/TUNA-HAN/gif-director-skill/tree/main/skills/gif-director
 ```
 
-## GitHub CLI Install
+## One-Command Install Or Refresh
+
+No clone needed. This downloads the install-or-refresh script from GitHub and installs or refreshes the skill for Codex, Claude Code, and Antigravity:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Join-Path $env:TEMP 'gif-director-install-or-update.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/TUNA-HAN/gif-director-skill/main/skills/gif-director/scripts/install-or-update.ps1' -OutFile $p; & $p"
+```
+
+If you already cloned this repo, run the same script locally:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File skills/gif-director/scripts/install-or-update.ps1
+```
+
+For Codex only:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File skills/gif-director/scripts/install-or-update.ps1 -Agent codex
+```
+
+If the skill is already installed and you only want to check or apply normal GitHub CLI updates:
+
+```powershell
+gh skill update --dry-run gif-director
+gh skill update gif-director
+```
+
+If you do not have the repo cloned, use the repo install command:
+
+```powershell
+gh skill install TUNA-HAN/gif-director-skill gif-director --agent codex --scope user --force
+```
+
+## Manual GitHub CLI Install
 
 ```bash
-gh skill install TUNA-HAN/gif-director-skill gif-director --agent codex --scope user
-gh skill install TUNA-HAN/gif-director-skill gif-director --agent claude-code --scope user
-gh skill install TUNA-HAN/gif-director-skill gif-director --agent antigravity --scope user
+gh skill install TUNA-HAN/gif-director-skill gif-director --agent codex --scope user --force
+gh skill install TUNA-HAN/gif-director-skill gif-director --agent claude-code --scope user --force
+gh skill install TUNA-HAN/gif-director-skill gif-director --agent antigravity --scope user --force
 ```
 
 ## Claude Code Marketplace Install
