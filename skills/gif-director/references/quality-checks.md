@@ -1,5 +1,7 @@
 # GIF Director Quality Checks
 
+This legacy reference is kept for compatibility. Prefer `quality-rubric.md` for current service-quality checks.
+
 Before final delivery, validate the final file rather than the intended frame list.
 
 ## Required Readback

@@ -1,89 +1,104 @@
 ---
 name: gif-director
-description: Use when creating, adapting, validating, optimizing, or style-matching animated GIFs from images, text, Korean captions, reaction prompts, sticker requests, existing GIFs, or reference GIFs; includes "움짤", "짤", "gif", "스티커", and "이런 느낌" requests.
+description: Use when creating, adapting, validating, optimizing, or style-matching animated GIFs from images, multiple images, text, Korean captions, reaction prompts, sticker packs, marketing/detail-page assets, existing GIFs, or reference GIFs; includes "움짤", "짤", "gif", "스티커", "상세페이지", and "이런 느낌" requests.
 ---
 
 # GIF Director
 
 ## Overview
 
-Create polished non-video GIFs from user images, text, and reference GIFs. Prefer a fast local image-to-GIF path, analyze references before imitating a style, and always validate the saved GIF by reading it back.
+Create polished non-video GIFs for chat, sticker packs, marketing banners, product detail pages, and reference-style matching. Work locally by default, analyze references before imitating them, and always validate the saved GIF by reading it back.
 
 ## Hard Rules
 
-- Do not use video generation, image-to-video models, MP4, MOV, or video transcode workflows.
-- Do not upload user images to external services unless the user explicitly asks for an AI-generated or cloud-assisted visual and understands the upload.
-- Do not stop after rendering. Re-open the final GIF and report actual dimensions, frame count, duration, and file size.
-- Ask only when a missing source image, missing output target, or external upload permission blocks progress.
-- Preserve Korean captions. Use CJK-capable fonts and automatic wrapping/fit checks.
+- Do not use video generation, image-to-video models, MP4, MOV, WebM, or video transcode workflows.
+- Do not upload user images to external services unless the user explicitly requests cloud/AI still-image assistance and consents to upload.
+- Do not trust intended frame data. Re-open the final GIF and report actual dimensions, frame count, duration, and file size.
+- Use ASCII console output in scripts. Korean belongs in captions, prompts, docs, and reports, not status glyphs.
+- Preserve Korean captions with CJK-capable font fallback, wrapping, text outline, and automatic fit.
+- Prefer deterministic local rendering for business assets. Use AI sprite-sheet generation only as an optional still-image lane.
 
-## Mode Selection
+## Mode Routing
 
-- **quick**: one good GIF from an image and optional text. Default for vague requests.
-- **reference**: analyze an existing GIF first, then match its size, timing, caption zone, and motion intensity.
-- **pack**: create 3-4 reaction variants when the user asks for a set, stickers, or multiple moods.
-- **optimize**: validate, resize, caption, or reduce an existing GIF without changing the concept.
+- **quick**: one polished GIF from image(s) and text. Default for vague "움짤 만들어줘" requests.
+- **reference**: run `analyze_reference_gif.py`, then copy canvas, timing, caption zone, and motion intensity.
+- **sprite**: use `render_sprite_gif.py` for 4x4 sprite sheets or deterministic still-image animation.
+- **pack**: use `gif_director.py --mode pack` for four reaction/sticker variants.
+- **marketing**: use `gif_director.py --mode marketing --preset detail-page` for detail-page or ad insert GIFs.
+- **optimize**: use `optimize_gif.py` for web/detail-page size, frame, and encoder optimization.
 
-Read `references/recipes.md` for preset choices and `references/quality-checks.md` before final delivery or repair.
+Read `references/motion-recipes.md` for preset selection and `references/quality-rubric.md` before final delivery.
 
-## Quick Workflow
+## Main Commands
 
-1. Resolve inputs: source image(s), optional text, optional reference GIF, target use such as chat/sticker/web.
-2. If there is a reference GIF, run `scripts/analyze_reference_gif.py` and use the emitted `style_recipe`.
-3. Pick a conservative canvas and preset. Default to `caption-pop` for text-heavy chat GIFs.
-4. Render with `scripts/render_gif.py`.
-5. Create a contact sheet with `scripts/make_contact_sheet.py` when the user will review timing or style.
-6. Validate with `scripts/validate_gif.py --json`.
-7. If validation fails, repair the smallest axis: frame count, duration, caption fit, canvas, or file size.
-8. Return output path(s), dimensions, frame count, duration, and file size. Keep commentary short.
-
-## Script Usage
-
-Install the single runtime dependency if Pillow is missing:
+Install local runtime dependency:
 
 ```bash
 python -m pip install -r <skill-dir>/requirements.txt
 ```
 
-Create a GIF from one image:
+One GIF from image(s):
 
 ```bash
-python <skill-dir>/scripts/render_gif.py --image input.png --text "퇴근하고 싶다" --output outputs/reaction.gif --preset caption-pop --width 512 --height 512 --duration 1.8 --report outputs/reaction.json
+python <skill-dir>/scripts/gif_director.py --mode quick --image input.png --text "퇴근하고 싶다" --output-dir outputs --base-name reaction
 ```
 
-Analyze a reference GIF:
+Marketing/detail-page GIF:
 
 ```bash
-python <skill-dir>/scripts/analyze_reference_gif.py --input reference.gif --json-output outputs/reference-analysis.json
+python <skill-dir>/scripts/gif_director.py --mode marketing --image product1.png --image product2.png --text "런칭 특가" --preset detail-page --output-dir outputs --base-name detail-hero
 ```
 
-Validate the final GIF:
+Four reaction pack:
 
 ```bash
-python <skill-dir>/scripts/validate_gif.py --input outputs/reaction.gif --json
+python <skill-dir>/scripts/gif_director.py --mode pack --image input.png --output-dir outputs --base-name campaign
 ```
 
-Make a contact sheet:
+Sprite sheet or still-image character motion:
 
 ```bash
-python <skill-dir>/scripts/make_contact_sheet.py --input outputs/reaction.gif --output outputs/reaction-sheet.png --columns 4
+python <skill-dir>/scripts/render_sprite_gif.py --sprite-sheet sprite_4x4.png --output outputs/sprite.gif --report outputs/sprite.json
+python <skill-dir>/scripts/render_sprite_gif.py --image portrait.png --text "좋아요" --output outputs/portrait-sprite.gif
 ```
 
-## Defaults
+Optional Gemini still-image sprite sheet generation, only after upload consent:
 
-- Chat/sticker GIF: 512x512, 1.4-2.0 seconds, 8-14 frames.
-- Wide meme GIF: keep reference aspect ratio or use 800x450.
-- Caption: bottom zone, white rounded panel, dark text, fitted to 1-3 lines.
-- Presets: `caption-pop`, `gentle-zoom`, `shake`, `bounce`, `polaroid`.
-- Output folder: `outputs/` under the current project unless the user gives another path.
+```bash
+python -m pip install -r <skill-dir>/requirements-ai.txt
+python <skill-dir>/scripts/generate_sprite_sheet_gemini.py --image portrait.png --output outputs/sprite-sheet.png --allow-upload
+```
 
-## Repair Loop
+Optimize an existing GIF:
 
-When quality is weak:
+```bash
+python <skill-dir>/scripts/optimize_gif.py --input outputs/detail-hero.gif --output outputs/detail-hero-small.gif --report outputs/detail-hero-small.json --max-width 720 --max-frames 14
+```
 
-- Text clipped: reduce font size, shorten line width, or move caption zone.
-- Motion too static: switch to `gentle-zoom`, `bounce`, or `shake`.
-- Too chaotic: lower duration, use `caption-pop`, or reduce canvas motion.
-- File too large: reduce canvas, frames, or duration; then validate again.
-- Loop pops: make first and last frames visually closer or use a hold on the final frame.
-- Reference mismatch: re-run analysis and copy its canvas/timing before changing the art direction.
+## Required Delivery Loop
+
+1. Resolve images, text, target use, and output path. Default to `outputs/`.
+2. If a reference GIF exists, run `analyze_reference_gif.py` and use its `style_recipe`.
+3. Route to quick, sprite, pack, marketing, or optimize mode.
+4. Render locally with Pillow unless the user explicitly authorizes AI still-image upload.
+5. Generate a contact sheet for anything subjective or business-facing.
+6. Validate with `validate_gif.py --json`.
+7. If validation fails, repair the smallest axis: text fit, canvas, frame count, duration, or file size.
+8. Final response: output path, contact sheet path when present, dimensions, frame count, duration, file size, and any unresolved risk.
+
+## Presets
+
+Core render presets: `caption-pop`, `gentle-zoom`, `shake`, `bounce`, `polaroid`, `pulse`, `spin`, `slide`, `wiggle`, `explode`, `detail-page`.
+
+Business target presets in `gif_director.py`: `chat`, `sticker`, `detail-page`, `ad-banner`.
+
+## Quality Bar
+
+- Text readable at final display size.
+- Main subject not covered by captions.
+- First frame identifies the subject or offer.
+- Loop feels intentional.
+- No blank frames.
+- Actual saved frame count matches the intended motion class.
+- File size is appropriate for the target surface.
+- No external upload occurred unless explicitly authorized.

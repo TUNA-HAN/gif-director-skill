@@ -1,6 +1,6 @@
 {
   "name": "gif-director",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Create polished non-video GIFs from images, text, Korean captions, and reference GIFs.",
   "author": {
     "name": "TUNA-HAN",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "GIF Director",
     "shortDescription": "Create polished non-video GIFs from images, text, and references.",
-    "longDescription": "A portable agent skill for local image-to-GIF creation, reference GIF analysis, Korean caption fitting, contact sheets, and saved-file validation without video generation.",
+    "longDescription": "A portable agent skill for local image-to-GIF creation, sprite GIFs, reference GIF analysis, Korean caption fitting, marketing/detail-page GIFs, sticker packs, contact sheets, optimization, and saved-file validation without video generation.",
     "developerName": "TUNA-HAN",
     "category": "Creativity",
     "capabilities": [
@@ -29,9 +29,9 @@
     ],
     "websiteURL": "https://github.com/TUNA-HAN/gif-director-skill",
     "defaultPrompt": [
-      "Use $gif-director to make a chat GIF from this image.",
+      "Use $gif-director to make a marketing GIF from this image.",
       "Use $gif-director to match this reference GIF style.",
-      "Use $gif-director to make a Korean caption sticker GIF."
+      "Use $gif-director to make a Korean sticker pack."
     ],
     "brandColor": "#F97316"
   }

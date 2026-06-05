@@ -1,5 +1,7 @@
 # GIF Director Recipes
 
+This legacy reference is kept for compatibility. Prefer `motion-recipes.md` for current routing.
+
 Use these as starting points. Adjust after reading the actual image and any reference GIF.
 
 ## Presets

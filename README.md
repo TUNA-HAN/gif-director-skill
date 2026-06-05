@@ -1,6 +1,12 @@
 # GIF Director Skill
 
-Portable `SKILL.md` package for creating polished non-video GIFs from images, Korean captions, text prompts, and reference GIFs.
+Portable Agent Skill for production-quality non-video GIF creation from images, Korean captions, marketing copy, reference GIFs, and sprite sheets.
+
+Repo:
+
+```text
+https://github.com/TUNA-HAN/gif-director-skill
+```
 
 ## Install With One Prompt
 
@@ -11,15 +17,7 @@ Install this Agent Skill from GitHub:
 https://github.com/TUNA-HAN/gif-director-skill/tree/main/skills/gif-director
 ```
 
-The skill itself lives at:
-
-```text
-skills/gif-director/SKILL.md
-```
-
 ## GitHub CLI Install
-
-GitHub CLI 2.93+ supports `gh skill install` for Claude Code, Codex, Antigravity, and other agents.
 
 ```bash
 gh skill install TUNA-HAN/gif-director-skill gif-director --agent codex --scope user
@@ -29,26 +27,68 @@ gh skill install TUNA-HAN/gif-director-skill gif-director --agent antigravity --
 
 ## Claude Code Marketplace Install
 
-Claude Code can also install this repo as a plugin marketplace:
-
 ```text
 /plugin marketplace add TUNA-HAN/gif-director-skill
 /plugin install gif-director@gif-director-skills
 ```
 
-## Runtime Dependency
+## What It Supports
 
-The bundled scripts use Pillow only:
+- Image + Korean/text caption to GIF.
+- Multiple images to sequence/detail-page GIF.
+- Reference GIF analysis before style matching.
+- Marketing/detail-page GIF generation.
+- Four-output reaction/sticker packs.
+- 4x4 sprite sheet to 16-frame GIF.
+- Deterministic still-image sprite motion.
+- Optional Gemini still-image sprite sheet generation with explicit upload consent.
+- Contact sheet generation.
+- Saved GIF readback validation.
+- GIF optimization with Pillow fallback and optional `gifski`/`ffmpeg` encoders.
+- No video generation and no MP4 workflow.
+
+## Runtime
+
+Required:
 
 ```bash
 python -m pip install -r skills/gif-director/requirements.txt
 ```
 
-## What It Does
+Optional AI still-image sprite sheet generation:
 
-- Image + caption to GIF.
-- Reference GIF analysis before style matching.
-- Korean/CJK caption wrapping and fit checks.
-- Contact sheet generation.
-- Saved GIF readback validation.
-- No video generation, no MP4 workflow.
+```bash
+python -m pip install -r skills/gif-director/requirements-ai.txt
+```
+
+## Main Commands
+
+Quick GIF:
+
+```bash
+python skills/gif-director/scripts/gif_director.py --mode quick --image input.png --text "퇴근하고 싶다" --output-dir outputs --base-name reaction
+```
+
+Marketing/detail-page GIF:
+
+```bash
+python skills/gif-director/scripts/gif_director.py --mode marketing --image product1.png --image product2.png --text "런칭 특가" --preset detail-page --output-dir outputs --base-name detail-hero
+```
+
+Sticker pack:
+
+```bash
+python skills/gif-director/scripts/gif_director.py --mode pack --image input.png --output-dir outputs --base-name campaign
+```
+
+Sprite GIF:
+
+```bash
+python skills/gif-director/scripts/render_sprite_gif.py --sprite-sheet sprite_4x4.png --output outputs/sprite.gif --report outputs/sprite.json
+```
+
+Optimize:
+
+```bash
+python skills/gif-director/scripts/optimize_gif.py --input outputs/detail-hero.gif --output outputs/detail-hero-small.gif --report outputs/detail-hero-small.json --max-width 720 --max-frames 14
+```
